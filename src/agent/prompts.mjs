@@ -81,6 +81,23 @@ export function chatSystemPrompt() {
   ].join('\n\n') + '\n';
 }
 
+/** Методика для MCP-клиентов (инструмент bpmn_start / prompt bpmn-analyst). */
+export const MCP_TOPICS = ['all', 'workflow', 'discovery', 'modeling-rules', 'gap-checklist', 'model-format', 'schemas', 'example'];
+export function mcpGuide(topic = 'all') {
+  const ref = (r) => stripFrontmatter(read(`skills/bpmn-analyst/references/${r}.md`));
+  const parts = {
+    workflow: () => [ROLE, stripFrontmatter(read('skills/bpmn-analyst/mcp-mode.md'))].join('\n\n'),
+    discovery: () => ref('discovery'),
+    'modeling-rules': () => ref('modeling-rules'),
+    'gap-checklist': () => ref('gap-checklist'),
+    'model-format': () => ref('model-format'),
+    schemas,
+    example
+  };
+  if (topic !== 'all') return parts[topic]();
+  return [parts.workflow(), '# Справочники', references(), '# Формат файлов', schemas(), example()].join('\n\n');
+}
+
 export function catalogTask({ names } = {}) {
   const mode = names?.length
     ? `Режим Б — по списку процессов пользователя:\n${names.map((n) => `- ${n}`).join('\n')}\n

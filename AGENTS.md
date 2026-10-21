@@ -9,12 +9,13 @@
 [skills/bpmn-analyst/SKILL.md](skills/bpmn-analyst/SKILL.md) и работай строго по нему.** Справочники —
 в `skills/bpmn-analyst/references/`. Инструменты — `node src/cli.mjs <extract|catalog|validate|build|render>`.
 
+Если подключён MCP-сервер bpmn-agent (есть инструменты `bpmn_*`) — вызови `bpmn_start` и работай через инструменты.
 Без терминала (только чат) — работай по [skills/bpmn-analyst/chat-mode.md](skills/bpmn-analyst/chat-mode.md).
 
 ## Если пользователь просит доработать сам инструмент
 
 - Node ≥ 20, ESM (`.mjs`), без сборки. Установка: `npm install`. Тесты: `npm test` — должны проходить.
-- `src/` — CLI и экспортёры; `src/agent/` — встроенный агент для любых LLM (OpenAI-совместимые API, Anthropic);
+- `src/` — CLI и экспортёры; `src/mcp/` — MCP-сервер; `src/agent/` — встроенный агент для любых LLM;
   `schema/` — JSON-схемы каталога и модели; `samples/` — эталонный пример (регламент → каталог → 4 модели).
 - Каноническая модель (`schema/process-model.schema.json`) — единственный источник для всех форматов: новый
   формат = новый экспортёр из модели + раскладки, а не правка других экспортёров.

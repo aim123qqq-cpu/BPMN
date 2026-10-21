@@ -3,9 +3,12 @@
 AI-агент уровня senior системного аналитика: находит бизнес-процессы в документации и строит BPMN-диаграммы
 уровней L0–L3 с экспортом в **stormBPMN** (BPMN 2.0), **Camunda 7**, **Camunda 8** и **draw.io**.
 
-Работает с **любой нейросетью**: как навык для AI-агентов (Claude Code, Codex, Cursor, Copilot, Gemini CLI), как
-промпт для обычного чата (ChatGPT, GigaChat, YandexGPT, DeepSeek) и как самостоятельный агент через API любой
-модели, включая локальные (Ollama, LM Studio).
+Работает с **любой нейросетью**:
+- как **MCP-сервер** для любого клиента с поддержкой MCP: Claude Desktop/Code, Cursor, VS Code Copilot, Codex,
+  Gemini CLI, Windsurf, LM Studio. API-ключи не нужны: думает модель вашего клиента;
+- как навык для AI-агентов (через AGENTS.md);
+- как промпт для обычного чата (ChatGPT, GigaChat, YandexGPT, DeepSeek);
+- как самостоятельный агент через API любой модели, включая локальные.
 
 ## Принцип
 
@@ -44,9 +47,66 @@ npm run demo      # пример: регламент закупок → 4 схе
 
 Нужен Node.js ≥ 20. Откройте `out/demo/preview.html` (работает без интернета) и `out/demo/report.md`.
 
-## Три способа запуска
+## Способы запуска
 
-### 1. AI-агент с доступом к файлам (рекомендуется)
+### 1. MCP-сервер (рекомендуется)
+
+Подключите сервер в своём клиенте и попросите обычными словами, например: «найди бизнес-процессы в
+`C:/docs/регламент.docx` и построй схемы для stormBPMN». Клиент сам вызовет `bpmn_start`, получит методику и
+дальше будет работать инструментами:
+
+| Инструмент | Что делает |
+|---|---|
+| `bpmn_start` | Методика аналитика: порядок работы, правила, JSON-форматы, эталон |
+| `bpmn_extract` | Документы (.md .txt .docx .pdf) → текст с якорями `[§S3.2]` |
+| `bpmn_check_catalog` | Проверка каталога + сверка цитат → `catalog.json`, `catalog.md` |
+| `bpmn_check_model` | Проверка модели процесса (BPMN, стиль, цитаты, связи уровней) → `models/<id>.json` |
+| `bpmn_build` | Сборка: stormBPMN/BPMN 2.0, Camunda 7/8, draw.io, `preview.html`, `report.md` |
+| `bpmn_render` | PNG схем для визуальной самопроверки (нужен Chrome или Edge) |
+
+Ещё есть prompt `bpmn-analyst` (в клиентах, которые поддерживают MCP prompts, — через «/»).
+
+Результаты сохраняются в рабочую папку: `BPMN_WORK_DIR`, по умолчанию `~/bpmn-work`. Ниже `<путь>` — это папка,
+куда вы склонировали репозиторий (используйте прямые слэши: `C:/Users/me/bpmn-agent`).
+
+**Claude Desktop** — Settings → Developer → Edit Config (`claude_desktop_config.json`).
+**Cursor** — `~/.cursor/mcp.json`. **Gemini CLI** — `~/.gemini/settings.json`.
+**Windsurf** — `~/.codeium/windsurf/mcp_config.json`. **LM Studio** (локальные модели) — Program → Edit `mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "bpmn-agent": {
+      "command": "node",
+      "args": ["<путь>/src/mcp/server.mjs"],
+      "env": { "BPMN_WORK_DIR": "C:/Users/me/bpmn-work" }
+    }
+  }
+}
+```
+
+**Claude Code:** `claude mcp add bpmn-agent -- node <путь>/src/mcp/server.mjs`. Если открыть папку репозитория,
+сервер подхватится сам из `.mcp.json`.
+
+**VS Code (Copilot, agent mode):** в папке репозитория сервер подхватится из `.vscode/mcp.json`. Для других папок
+добавьте в их `.vscode/mcp.json`:
+
+```json
+{ "servers": { "bpmn-agent": { "type": "stdio", "command": "node", "args": ["<путь>/src/mcp/server.mjs"] } } }
+```
+
+**Codex CLI** — `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.bpmn-agent]
+command = "node"
+args = ["<путь>/src/mcp/server.mjs"]
+```
+
+ChatGPT подключает только удалённые MCP-серверы (по HTTPS), а этот сервер локальный. Для ChatGPT используйте
+способ 3 (промпт).
+
+### 2. AI-агент с доступом к файлам, без MCP
 
 Откройте папку в Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI или другом агенте и попросите:
 
@@ -58,7 +118,7 @@ npm run demo      # пример: регламент закупок → 4 схе
 `.claude/skills` (Claude Code) или `GEMINI.md` (Gemini CLI). Вся методика лежит в
 [skills/bpmn-analyst/](skills/bpmn-analyst/) — одно место для всех агентов.
 
-### 2. Обычный чат с нейросетью (без установки агента)
+### 3. Обычный чат с нейросетью (без установки агента)
 
 1. Вставьте в чат содержимое [prompts/bpmn-analyst.chat.md](prompts/bpmn-analyst.chat.md) — как системный промпт или
    первое сообщение (в ChatGPT — Custom GPT / Project instructions, в Claude.ai — Project instructions).
@@ -73,7 +133,7 @@ node src/cli.mjs build models --docs docs/ --formats generic,drawio --out out
 
 Если `build` нашёл ошибки, отправьте его вывод обратно в чат: нейросеть исправит модель.
 
-### 3. Встроенный агент через API любой модели
+### 4. Встроенный агент через API любой модели (автоматизация без человека)
 
 Шаги ведёт код, а от модели требуется только JSON. Поэтому tool calling не нужен и подходят и слабые,
 и локальные модели. Ошибки валидации и неточные цитаты автоматически отправляются модели на исправление.
@@ -133,11 +193,12 @@ node src/cli.mjs agent    catalog|model|run ...             # встроенны
 
 ```
 skills/bpmn-analyst/           методика аналитика — единый источник для всех нейросетей
-  SKILL.md, chat-mode.md       режим агента / режим чата
+  SKILL.md, mcp-mode.md, chat-mode.md   режим агента / MCP / чата
   references/                  поиск процессов, правила моделирования, чек-лист пробелов, форматы
 AGENTS.md, CLAUDE.md, GEMINI.md, .claude/skills/   точки входа для разных агентов
 prompts/bpmn-analyst.chat.md   собранный промпт для чатов (генерируется: npm run prompt)
 schema/                        JSON-схемы каталога и модели процесса
+src/mcp/server.mjs             MCP-сервер (инструменты bpmn_* для любого MCP-клиента)
 src/agent/                     встроенный агент: клиенты LLM, промпты, конвейер
 src/                           extract, валидация, раскладка, экспорт, lint, отчёты, render
 samples/                       синтетический регламент + эталонные каталог и модели

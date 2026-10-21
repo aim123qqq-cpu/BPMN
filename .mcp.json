@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "bpmn-agent": {
+      "command": "node",
+      "args": [
+        "src/mcp/server.mjs"
+      ]
+    }
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "bpmn-agent/process-model",
+  "title": "Каноническая модель бизнес-процесса",
+  "description": "Единый источник истины. Из него генерируются все форматы (BPMN 2.0 / Camunda / draw.io).",
+  "type": "object",
+  "required": ["id", "name", "level", "nodes", "flows"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "$ref": "#/definitions/id" },
+    "name": { "type": "string", "minLength": 1 },
+    "level": { "enum": ["L0", "L1", "L2", "L3"] },
+    "parent": { "$ref": "#/definitions/id", "description": "id процесса уровнем выше" },
+    "owner": { "type": "string" },
+    "goal": { "type": "string" },
+    "description": { "type": "string" },
+    "pool": { "type": "string", "description": "Название пула; по умолчанию = name" },
+    "lanes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "$ref": "#/definitions/id" },
+          "name": { "type": "string", "minLength": 1 },
+          "source": { "$ref": "#/definitions/source" }
+        }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/node" }
+    },
+    "flows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "from", "to"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "$ref": "#/definitions/id" },
+          "from": { "$ref": "#/definitions/id" },
+          "to": { "$ref": "#/definitions/id" },
+          "name": { "type": "string", "description": "Подпись (для ветки шлюза — ответ: «Да», «Сумма > 1 млн»)" },
+          "expression": { "type": "string", "description": "Исполняемое условие без префикса (Camunda 7: ${...} / Camunda 8: =...)" },
+          "default": { "type": "boolean" },
+          "source": { "$ref": "#/definitions/source" },
+          "confidence": { "$ref": "#/definitions/confidence" }
+        }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "description": "Пробелы и противоречия в документации → вопросы заказчику",
+      "items": { "$ref": "#/definitions/gap" }
+    }
+  },
+  "definitions": {
+    "id": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_\\-]*$" },
+    "confidence": {
+      "enum": ["explicit", "inferred", "assumption"],
+      "description": "explicit — прямо в документе; inferred — логически следует; assumption — допущение аналитика"
+    },
+    "source": {
+      "type": "object",
+      "required": ["doc"],
+      "additionalProperties": false,
+      "properties": {
+        "doc": { "type": "string" },
+        "section": { "type": "string", "description": "id раздела из extract (например S3.2)" },
+        "quote": { "type": "string", "description": "Дословная цитата, подтверждающая элемент" }
+      }
+    },
+    "gap": {
+      "type": "object",
+      "required": ["id", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/definitions/id" },
+        "text": { "type": "string", "description": "Что не описано / противоречит" },
+        "question": { "type": "string", "description": "Вопрос заказчику" },
+        "node": { "$ref": "#/definitions/id" },
+        "severity": { "enum": ["high", "medium", "low"] },
+        "source": { "$ref": "#/definitions/source" }
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/definitions/id" },
+        "type": {
+          "enum": [
+            "startEvent", "endEvent", "intermediateCatchEvent", "intermediateThrowEvent", "boundaryEvent",
+            "task", "userTask", "serviceTask", "sendTask", "receiveTask", "manualTask", "businessRuleTask", "scriptTask",
+            "subProcess", "callActivity",
+            "exclusiveGateway", "parallelGateway", "inclusiveGateway", "eventBasedGateway"
+          ]
+        },
+        "name": { "type": "string" },
+        "lane": { "$ref": "#/definitions/id" },
+        "event": {
+          "enum": ["none", "message", "timer", "error", "signal", "conditional", "escalation", "terminate"],
+          "description": "Тип триггера/результата события"
+        },
+        "timer": { "type": "string", "description": "ISO 8601: P3D, PT4H, R/P1D — для timer-событий" },
+        "code": {
+          "$ref": "#/definitions/id",
+          "description": "Код ошибки/эскалации или ключ сообщения/сигнала. Одинаковый code связывает бросающее событие в детализации и ловящее в родителе"
+        },
+        "attachedTo": { "$ref": "#/definitions/id", "description": "Для boundaryEvent — id активности" },
+        "interrupting": { "type": "boolean", "default": true },
+        "ref": { "$ref": "#/definitions/id", "description": "Для callActivity/subProcess — id процесса-детализации" },
+        "system": { "type": "string", "description": "Информационная система" },
+        "documents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "direction": { "enum": ["in", "out"] }
+            }
+          }
+        },
+        "sla": { "type": "string", "description": "Норматив времени, как в документе" },
+        "notes": { "type": "string" },
+        "source": { "$ref": "#/definitions/source" },
+        "confidence": { "$ref": "#/definitions/confidence" }
+      }
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "id": "proc_procurement",
+  "name": "Управление закупками",
+  "level": "L1",
+  "owner": "Отдел закупок",
+  "goal": "Своевременное обеспечение подразделений продукцией в рамках бюджета",
+  "nodes": [
+    { "id": "s_need", "type": "startEvent", "name": "Возникла потребность в продукции", "confidence": "inferred",
+      "source": { "doc": "reglament-zakupok.md", "section": "S3.1", "quote": "Основанием для закупки является заявка Инициатора" } },
+    { "id": "c_purchase", "type": "callActivity", "name": "Проведение закупки", "ref": "proc_purchase",
+      "source": { "doc": "reglament-zakupok.md", "section": "S3" } },
+    { "id": "c_contract", "type": "callActivity", "name": "Согласование и заключение договора", "ref": "proc_contract",
+      "source": { "doc": "reglament-zakupok.md", "section": "S4" } },
+    { "id": "c_accept", "type": "callActivity", "name": "Приёмка продукции", "ref": "proc_acceptance",
+      "source": { "doc": "reglament-zakupok.md", "section": "S5.1" } },
+    { "id": "c_pay", "type": "callActivity", "name": "Оплата поставки", "ref": "proc_payment",
+      "source": { "doc": "reglament-zakupok.md", "section": "S5.2" } },
+    { "id": "e_done", "type": "endEvent", "name": "Продукция получена и оплачена", "confidence": "inferred" },
+
+    { "id": "s_plan", "type": "startEvent", "event": "timer", "timer": "R/2026-10-01T09:00:00/P1Y", "name": "Ежегодно, до 1 ноября",
+      "source": { "doc": "reglament-zakupok.md", "section": "S2.1", "quote": "Ежегодно до 1 ноября" } },
+    { "id": "c_plan", "type": "callActivity", "name": "Планирование закупок", "ref": "proc_planning",
+      "source": { "doc": "reglament-zakupok.md", "section": "S2" } },
+    { "id": "e_plan", "type": "endEvent", "name": "План закупок утверждён",
+      "source": { "doc": "reglament-zakupok.md", "section": "S2.4", "quote": "План закупок утверждается генеральным директором до 15 декабря" } },
+
+    { "id": "s_eval", "type": "startEvent", "event": "timer", "timer": "R/2027-01-15T09:00:00/P1Y", "name": "Ежегодно",
+      "notes": "Дата старта оценки в регламенте не указана", "confidence": "assumption",
+      "source": { "doc": "reglament-zakupok.md", "section": "S5.3", "quote": "ежегодно проводит оценку поставщиков" } },
+    { "id": "c_eval", "type": "callActivity", "name": "Ведение реестра и оценка поставщиков", "ref": "proc_supplier_eval",
+      "source": { "doc": "reglament-zakupok.md", "section": "S5.3" } },
+    { "id": "e_eval", "type": "endEvent", "name": "Поставщики оценены", "confidence": "inferred" }
+  ],
+  "flows": [
+    { "id": "f1", "from": "s_need", "to": "c_purchase" },
+    { "id": "f2", "from": "c_purchase", "to": "c_contract" },
+    { "id": "f3", "from": "c_contract", "to": "c_accept" },
+    { "id": "f4", "from": "c_accept", "to": "c_pay" },
+    { "id": "f5", "from": "c_pay", "to": "e_done" },
+    { "id": "f6", "from": "s_plan", "to": "c_plan" },
+    { "id": "f7", "from": "c_plan", "to": "e_plan" },
+    { "id": "f8", "from": "s_eval", "to": "c_eval" },
+    { "id": "f9", "from": "c_eval", "to": "e_eval" }
+  ]
+}

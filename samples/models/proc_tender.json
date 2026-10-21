@@ -1,0 +1,48 @@
+{
+  "id": "proc_tender",
+  "name": "Проведение тендера",
+  "level": "L3",
+  "parent": "proc_purchase",
+  "owner": "Отдел закупок",
+  "pool": "ООО «Альфа-Пример»",
+  "lanes": [
+    { "id": "ln_proc", "name": "Отдел закупок" },
+    { "id": "ln_comm", "name": "Закупочная комиссия" }
+  ],
+  "nodes": [
+    { "id": "s1", "type": "startEvent", "name": "Выбран тендер", "lane": "ln_proc",
+      "source": { "doc": "reglament-zakupok.md", "section": "S3.4", "quote": "при стоимости свыше 500 000 руб. — конкурентная процедура (тендер)" } },
+    { "id": "t_docs", "type": "userTask", "name": "Подготовить тендерную документацию", "lane": "ln_proc",
+      "documents": [{ "name": "Тендерная документация", "direction": "out" }],
+      "source": { "doc": "reglament-zakupok.md", "section": "S3.6", "quote": "Отдел закупок готовит тендерную документацию" } },
+    { "id": "t_publish", "type": "sendTask", "name": "Опубликовать извещение", "lane": "ln_proc",
+      "source": { "doc": "reglament-zakupok.md", "section": "S3.6", "quote": "публикует извещение" } },
+    { "id": "i_deadline", "type": "intermediateCatchEvent", "event": "timer", "timer": "P14D", "name": "Срок приёма заявок истёк", "lane": "ln_proc", "confidence": "inferred",
+      "notes": "В регламенте «не менее 10 рабочих дней»; P14D — календарное приближение, в движке нужен бизнес-календарь",
+      "source": { "doc": "reglament-zakupok.md", "section": "S3.6", "quote": "Срок приёма заявок — не менее 10 рабочих дней" } },
+    { "id": "g_bids", "type": "exclusiveGateway", "name": "Заявки поданы?", "lane": "ln_proc",
+      "source": { "doc": "reglament-zakupok.md", "section": "S3.7" } },
+    { "id": "e_failed", "type": "endEvent", "event": "error", "code": "TENDER_FAILED", "name": "Тендер не состоялся", "lane": "ln_proc",
+      "source": { "doc": "reglament-zakupok.md", "section": "S3.7", "quote": "Если на тендер не подано ни одной заявки, тендер признаётся несостоявшимся" } },
+    { "id": "t_evaluate", "type": "userTask", "name": "Оценить заявки участников", "lane": "ln_comm",
+      "source": { "doc": "reglament-zakupok.md", "section": "S3.6", "quote": "Закупочная комиссия оценивает заявки участников и выбирает победителя" } },
+    { "id": "t_protocol", "type": "userTask", "name": "Оформить протокол и выбрать победителя", "lane": "ln_comm",
+      "documents": [{ "name": "Протокол закупочной комиссии", "direction": "out" }],
+      "source": { "doc": "reglament-zakupok.md", "section": "S3.6", "quote": "Решение комиссии оформляется протоколом" } },
+    { "id": "e_done", "type": "endEvent", "name": "Победитель определён", "lane": "ln_comm", "confidence": "inferred" }
+  ],
+  "flows": [
+    { "id": "f1", "from": "s1", "to": "t_docs" },
+    { "id": "f2", "from": "t_docs", "to": "t_publish" },
+    { "id": "f3", "from": "t_publish", "to": "i_deadline" },
+    { "id": "f4", "from": "i_deadline", "to": "g_bids" },
+    { "id": "f5", "from": "g_bids", "to": "t_evaluate", "name": "Да", "expression": "bidsCount > 0" },
+    { "id": "f6", "from": "g_bids", "to": "e_failed", "name": "Нет", "default": true },
+    { "id": "f7", "from": "t_evaluate", "to": "t_protocol" },
+    { "id": "f8", "from": "t_protocol", "to": "e_done" }
+  ],
+  "gaps": [
+    { "id": "G10", "severity": "medium", "node": "t_evaluate", "text": "Не указаны критерии оценки заявок и срок работы комиссии", "question": "Какие критерии и веса? Срок оценки?" },
+    { "id": "G11", "severity": "low", "node": "g_bids", "text": "Не описан случай одной поданной заявки", "question": "Тендер с одним участником считается состоявшимся?" }
+  ]
+}

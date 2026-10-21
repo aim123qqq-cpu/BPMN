@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "bpmn-agent/catalog",
+  "title": "Каталог бизнес-процессов",
+  "type": "object",
+  "required": ["documents", "processes"],
+  "additionalProperties": false,
+  "properties": {
+    "title": { "type": "string" },
+    "documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["doc"],
+        "additionalProperties": false,
+        "properties": {
+          "doc": { "type": "string" },
+          "title": { "type": "string" },
+          "version": { "type": "string" }
+        }
+      }
+    },
+    "processes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "level", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_\\-]*$" },
+          "name": { "type": "string" },
+          "level": { "enum": ["L0", "L1", "L2", "L3"] },
+          "parent": { "type": "string" },
+          "goal": { "type": "string" },
+          "trigger": { "type": "string" },
+          "result": { "type": "string" },
+          "owner": { "type": "string" },
+          "participants": { "type": "array", "items": { "type": "string" } },
+          "systems": { "type": "array", "items": { "type": "string" } },
+          "aliases": { "type": "array", "items": { "type": "string" }, "description": "Другие названия этого процесса в документах" },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["doc"],
+              "additionalProperties": false,
+              "properties": {
+                "doc": { "type": "string" },
+                "section": { "type": "string" },
+                "quote": { "type": "string" }
+              }
+            }
+          },
+          "coverage": {
+            "enum": ["full", "partial", "mention"],
+            "description": "full — описан пошагово; partial — фрагментарно; mention — только упомянут"
+          },
+          "confidence": { "enum": ["explicit", "inferred", "assumption"] },
+          "status": { "enum": ["proposed", "confirmed", "rejected"] },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "text"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "text": { "type": "string" },
+          "question": { "type": "string" },
+          "process": { "type": "string" },
+          "severity": { "enum": ["high", "medium", "low"] }
+        }
+      }
+    }
+  }
+}

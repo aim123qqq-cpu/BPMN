@@ -1,0 +1,245 @@
+{
+  "id": "proc_contract",
+  "name": "Согласование и заключение договора",
+  "level": "L2",
+  "parent": "proc_procurement",
+  "owner": "Отдел закупок",
+  "pool": "ООО «Альфа-Пример»",
+  "lanes": [
+    {
+      "id": "ln_proc",
+      "name": "Отдел закупок"
+    },
+    {
+      "id": "ln_legal",
+      "name": "Юридический отдел"
+    },
+    {
+      "id": "ln_fin",
+      "name": "Финансовый отдел"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "s1",
+      "type": "startEvent",
+      "name": "Проект договора подготовлен",
+      "lane": "ln_proc",
+      "source": {
+        "doc": "reglament-zakupok.md",
+        "section": "S3.8",
+        "quote": "Отдел закупок готовит проект договора"
+      }
+    },
+    {
+      "id": "g_loop",
+      "type": "exclusiveGateway",
+      "lane": "ln_legal"
+    },
+    {
+      "id": "t_legal",
+      "type": "userTask",
+      "name": "Согласовать проект договора",
+      "lane": "ln_legal",
+      "sla": "3 рабочих дня",
+      "source": {
+        "doc": "reglament-zakupok.md",
+        "section": "S4.1",
+        "quote": "Проект договора согласуется Юридическим отделом в течение 3 рабочих дней"
+      }
+    },
+    {
+      "id": "g_remarks",
+      "type": "exclusiveGateway",
+      "name": "Есть замечания?",
+      "lane": "ln_legal",
+      "source": {
+        "doc": "reglament-zakupok.md",
+        "section": "S4.1"
+      }
+    },
+    {
+      "id": "t_rework",
+      "type": "userTask",
+      "name": "Доработать проект договора",
+      "lane": "ln_proc",
+      "source": {
+        "doc": "reglament-zakupok.md",
+        "section": "S4.1",
+        "quote": "договор возвращается в Отдел закупок на доработку"
+      }
+    },
+    {
+      "id": "g_amount",
+      "type": "exclusiveGateway",
+      "name": "Сумма свыше 1 000 000 руб.?",
+      "lane": "ln_legal",
+      "confidence": "inferred",
+      "source": {
+        "doc": "reglament-zakupok.md",
+        "section": "S4.2"
+      }
+    },
+    {
+      "id": "t_fin",
+      "type": "userTask",
+      "name": "Согласовать договор с финансовой стороны",
+      "lane": "ln_fin",
+      "source": {
+        "doc": "reglament-zakupok.md",
+        "section": "S4.2",
+        "quote": "дополнительно согласуются Финансовым отделом"
+      }
+    },
+    {
+      "id": "g_merge",
+      "type": "exclusiveGateway",
+      "lane": "ln_proc"
+    },
+    {
+      "id": "t_sign",
+      "type": "userTask",
+      "name": "Подписать договор",
+      "lane": "ln_proc",
+      "confidence": "assumption",
+      "notes": "Подписант не указан в регламенте — см. G4; временно в дорожке Отдела закупок"
+    },
+    {
+      "id": "t_send",
+      "type": "sendTask",
+      "name": "Направить договор поставщику",
+      "lane": "ln_proc",
+      "source": {
+        "doc": "reglament-zakupok.md",
+        "section": "S4.3",
+        "quote": "Согласованный договор подписывается и направляется поставщику"
+      }
+    },
+    {
+      "id": "t_receive",
+      "type": "receiveTask",
+      "name": "Получить экземпляр, подписанный поставщиком",
+      "lane": "ln_proc",
+      "confidence": "inferred",
+      "source": {
+        "doc": "reglament-zakupok.md",
+        "section": "S4.3"
+      }
+    },
+    {
+      "id": "t_register",
+      "type": "userTask",
+      "name": "Зарегистрировать договор в СЭД",
+      "lane": "ln_proc",
+      "system": "СЭД",
+      "source": {
+        "doc": "reglament-zakupok.md",
+        "section": "S4.3",
+        "quote": "Подписанный поставщиком экземпляр регистрируется в СЭД"
+      }
+    },
+    {
+      "id": "e_done",
+      "type": "endEvent",
+      "name": "Договор заключён",
+      "lane": "ln_proc",
+      "confidence": "inferred"
+    }
+  ],
+  "flows": [
+    {
+      "id": "f1",
+      "from": "s1",
+      "to": "g_loop"
+    },
+    {
+      "id": "f1a",
+      "from": "g_loop",
+      "to": "t_legal"
+    },
+    {
+      "id": "f2",
+      "from": "t_legal",
+      "to": "g_remarks"
+    },
+    {
+      "id": "f3",
+      "from": "g_remarks",
+      "to": "t_rework",
+      "name": "Да",
+      "expression": "hasRemarks = true"
+    },
+    {
+      "id": "f4",
+      "from": "t_rework",
+      "to": "g_loop"
+    },
+    {
+      "id": "f5",
+      "from": "g_remarks",
+      "to": "g_amount",
+      "name": "Нет",
+      "default": true
+    },
+    {
+      "id": "f6",
+      "from": "g_amount",
+      "to": "t_fin",
+      "name": "Да",
+      "expression": "amount > 1000000"
+    },
+    {
+      "id": "f7",
+      "from": "g_amount",
+      "to": "g_merge",
+      "name": "Нет",
+      "default": true
+    },
+    {
+      "id": "f8",
+      "from": "t_fin",
+      "to": "g_merge"
+    },
+    {
+      "id": "f9",
+      "from": "g_merge",
+      "to": "t_sign"
+    },
+    {
+      "id": "f10",
+      "from": "t_sign",
+      "to": "t_send"
+    },
+    {
+      "id": "f11",
+      "from": "t_send",
+      "to": "t_receive"
+    },
+    {
+      "id": "f12",
+      "from": "t_receive",
+      "to": "t_register"
+    },
+    {
+      "id": "f13",
+      "from": "t_register",
+      "to": "e_done"
+    }
+  ],
+  "gaps": [
+    {
+      "id": "G4",
+      "severity": "medium",
+      "node": "t_sign",
+      "text": "Не указан подписант со стороны компании и действия, если поставщик не подписал договор",
+      "question": "Кто подписывает? Срок ожидания подписи поставщика и действия по его истечении?"
+    },
+    {
+      "id": "G9",
+      "severity": "low",
+      "node": "t_fin",
+      "text": "Не описано, что происходит при замечаниях Финансового отдела",
+      "question": "Возврат на доработку в Отдел закупок, как и после юристов?"
+    }
+  ]
+}
